@@ -1,0 +1,35 @@
+name: Update Meme do Momento
+
+on:
+  schedule:
+    - cron: '0 */6 * * *' # Roda a cada 6 horas
+  workflow_dispatch: # Permite execução manual no GitHub Actions
+
+jobs:
+  update-meme:
+    runs-on: ubuntu-latest
+    steps:
+      # Faz checkout do repositório
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Busca um meme aleatório da Meme API
+      - name: Fetch Random Meme
+        id: meme
+        run: |
+          MEME_URL=$(curl -s https://meme-api.com/gimme | jq -r '.url')
+          echo "MEME_URL=$MEME_URL" >> $GITHUB_ENV
+
+      # Atualiza o README com a nova URL do meme
+      - name: Update README
+        run: |
+          sed -i "s|https://media.giphy.com/media/[^']*|${{ env.MEME_URL }}|" README.md
+
+      # Configura o Git e faz o commit
+      - name: Commit Changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add README.md
+          git commit -m "Atualiza Meme do Momento com novo meme aleatório" || echo "Nada para commitar"
+          git push
